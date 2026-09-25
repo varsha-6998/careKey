@@ -463,7 +463,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      emergency_profile: { Args: { _medical_id: string }; Returns: Json }
       expire_stale_consents: { Args: never; Returns: undefined }
+      find_patient_by_medical_id: {
+        Args: { _medical_id: string }
+        Returns: {
+          full_name: string
+          medical_id: string
+          patient_id: string
+        }[]
+      }
       has_consent: {
         Args: { _category: string; _patient_id: string }
         Returns: boolean
@@ -475,6 +484,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      regenerate_medical_id: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "patient" | "doctor" | "admin"

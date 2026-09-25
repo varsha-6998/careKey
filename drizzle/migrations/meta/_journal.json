@@ -8,6 +8,13 @@
       "when": 1790315064878,
       "tag": "0000_carekey_core_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790315102835,
+      "tag": "0001_carekey_access_helpers",
+      "breakpoints": true
     }
   ]
 }
