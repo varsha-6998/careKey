@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as HospitalsRouteImport } from './routes/hospitals'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as QrRouteImport } from './routes/qr'
 import { Route as RecordsRouteImport } from './routes/records'
@@ -36,6 +37,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HospitalsRoute = HospitalsRouteImport.update({
+  id: '/hospitals',
+  path: '/hospitals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/hospitals': typeof HospitalsRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
   '/records': typeof RecordsRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/hospitals': typeof HospitalsRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
   '/records': typeof RecordsRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/hospitals': typeof HospitalsRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
   '/records': typeof RecordsRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/history'
+    | '/hospitals'
     | '/profile'
     | '/qr'
     | '/records'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/history'
+    | '/hospitals'
     | '/profile'
     | '/qr'
     | '/records'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/history'
+    | '/hospitals'
     | '/profile'
     | '/qr'
     | '/records'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   HistoryRoute: typeof HistoryRoute
+  HospitalsRoute: typeof HospitalsRoute
   ProfileRoute: typeof ProfileRoute
   QrRoute: typeof QrRoute
   RecordsRoute: typeof RecordsRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospitals': {
+      id: '/hospitals'
+      path: '/hospitals'
+      fullPath: '/hospitals'
+      preLoaderRoute: typeof HospitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   HistoryRoute: HistoryRoute,
+  HospitalsRoute: HospitalsRoute,
   ProfileRoute: ProfileRoute,
   QrRoute: QrRoute,
   RecordsRoute: RecordsRoute,
