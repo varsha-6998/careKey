@@ -12,9 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmergencyRouteImport } from './routes/emergency'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as HospitalsRouteImport } from './routes/hospitals'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as QrRouteImport } from './routes/qr'
+import { Route as RecordsRouteImport } from './routes/records'
+import { Route as ShareRouteImport } from './routes/share'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -31,9 +35,19 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmergencyRoute = EmergencyRouteImport.update({
+  id: '/emergency',
+  path: '/emergency',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HospitalsRoute = HospitalsRouteImport.update({
+  id: '/hospitals',
+  path: '/hospitals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -46,48 +60,104 @@ const QrRoute = QrRouteImport.update({
   path: '/qr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecordsRoute = RecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/emergency': typeof EmergencyRoute
   '/history': typeof HistoryRoute
+  '/hospitals': typeof HospitalsRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
+  '/records': typeof RecordsRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/emergency': typeof EmergencyRoute
   '/history': typeof HistoryRoute
+  '/hospitals': typeof HospitalsRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
+  '/records': typeof RecordsRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/emergency': typeof EmergencyRoute
   '/history': typeof HistoryRoute
+  '/hospitals': typeof HospitalsRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
+  '/records': typeof RecordsRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/history' | '/profile' | '/qr'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/emergency'
+    | '/history'
+    | '/hospitals'
+    | '/profile'
+    | '/qr'
+    | '/records'
+    | '/share'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/history' | '/profile' | '/qr'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/emergency'
+    | '/history'
+    | '/hospitals'
+    | '/profile'
+    | '/qr'
+    | '/records'
+    | '/share'
   id:
-    '__root__' | '/' | '/auth' | '/dashboard' | '/history' | '/profile' | '/qr'
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/emergency'
+    | '/history'
+    | '/hospitals'
+    | '/profile'
+    | '/qr'
+    | '/records'
+    | '/share'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
+  EmergencyRoute: typeof EmergencyRoute
   HistoryRoute: typeof HistoryRoute
+  HospitalsRoute: typeof HospitalsRoute
   ProfileRoute: typeof ProfileRoute
   QrRoute: typeof QrRoute
+  RecordsRoute: typeof RecordsRoute
+  ShareRoute: typeof ShareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -113,11 +183,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/emergency': {
+      id: '/emergency'
+      path: '/emergency'
+      fullPath: '/emergency'
+      preLoaderRoute: typeof EmergencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/history': {
       id: '/history'
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospitals': {
+      id: '/hospitals'
+      path: '/hospitals'
+      fullPath: '/hospitals'
+      preLoaderRoute: typeof HospitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -134,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QrRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/records': {
+      id: '/records'
+      path: '/records'
+      fullPath: '/records'
+      preLoaderRoute: typeof RecordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,9 +239,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
+  EmergencyRoute: EmergencyRoute,
   HistoryRoute: HistoryRoute,
+  HospitalsRoute: HospitalsRoute,
   ProfileRoute: ProfileRoute,
   QrRoute: QrRoute,
+  RecordsRoute: RecordsRoute,
+  ShareRoute: ShareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

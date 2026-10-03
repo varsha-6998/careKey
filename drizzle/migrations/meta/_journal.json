@@ -15,6 +15,13 @@
       "when": 1790315102835,
       "tag": "0001_carekey_access_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791000622167,
+      "tag": "0002_medical_documents_storage_policies",
+      "breakpoints": true
     }
   ]
 }
