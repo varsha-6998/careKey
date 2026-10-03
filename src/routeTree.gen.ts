@@ -15,6 +15,8 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as QrRouteImport } from './routes/qr'
+import { Route as RecordsRouteImport } from './routes/records'
+import { Route as ShareRouteImport } from './routes/share'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +48,16 @@ const QrRoute = QrRouteImport.update({
   path: '/qr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecordsRoute = RecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
+  '/records': typeof RecordsRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
+  '/records': typeof RecordsRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,14 +87,40 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/profile': typeof ProfileRoute
   '/qr': typeof QrRoute
+  '/records': typeof RecordsRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/history' | '/profile' | '/qr'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/history'
+    | '/profile'
+    | '/qr'
+    | '/records'
+    | '/share'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/history' | '/profile' | '/qr'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/history'
+    | '/profile'
+    | '/qr'
+    | '/records'
+    | '/share'
   id:
-    '__root__' | '/' | '/auth' | '/dashboard' | '/history' | '/profile' | '/qr'
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/history'
+    | '/profile'
+    | '/qr'
+    | '/records'
+    | '/share'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -88,6 +130,8 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   ProfileRoute: typeof ProfileRoute
   QrRoute: typeof QrRoute
+  RecordsRoute: typeof RecordsRoute
+  ShareRoute: typeof ShareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QrRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/records': {
+      id: '/records'
+      path: '/records'
+      fullPath: '/records'
+      preLoaderRoute: typeof RecordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -144,6 +202,8 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   ProfileRoute: ProfileRoute,
   QrRoute: QrRoute,
+  RecordsRoute: RecordsRoute,
+  ShareRoute: ShareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

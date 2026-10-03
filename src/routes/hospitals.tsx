@@ -1,0 +1,240 @@
+import { createFileRoute, ClientOnly, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { lazy, Suspense, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AppShell, PageHeading } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { haversineKm } from "@/lib/carekey";
+
+const HospitalMap = lazy(() => import("@/components/HospitalMap"));
+
+export const Route = createFileRoute("/hospitals")({
+  head: () => ({
+    meta: [
+      { title: "Find nearby hospitals — CareKey" },
+      {
+        name: "description",
+        content:
+          "Find emergency, trauma and ambulance-equipped hospitals near you on an OpenStreetMap map, sorted by distance.",
+      },
+      { property: "og:title", content: "Find nearby hospitals — CareKey" },
+      {
+        property: "og:description",
+        content: "Nearby emergency hospitals sorted by distance with directions.",
+      },
+    ],
+  }),
+  component: HospitalsRoute,
+});
+
+const DEFAULT = { lat: 12.9716, lon: 77.5946 };
+
+function HospitalsRoute() {
+  const { session } = useAuth();
+  const body = <HospitalsPage />;
+  if (session) return <AppShell>{body}</AppShell>;
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="bg-warning-soft px-4 py-1.5 text-center text-xs font-medium text-warning-foreground">
+        Research Prototype — Not for Clinical Use. Demo hospital data.
+      </div>
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <Link to="/" className="mb-4 inline-block text-sm text-muted-foreground hover:underline">
+          ← CareKey home
+        </Link>
+        {body}
+      </div>
+    </div>
+  );
+}
+
+const FILTERS = [
+  { key: "emergency", label: "Emergency department" },
+  { key: "trauma", label: "Trauma care" },
+  { key: "ambulance", label: "Ambulance" },
+  { key: "open_24h", label: "Open now" },
+] as const;
+
+type FilterKey = (typeof FILTERS)[number]["key"];
+
+function HospitalsPage() {
+  const [loc, setLoc] = useState<{ lat: number; lon: number } | null>(null);
+  const [locStatus, setLocStatus] = useState<"idle" | "asking" | "granted" | "denied">("idle");
+  const [filters, setFilters] = useState<FilterKey[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const { data: hospitals = [] } = useQuery({
+    queryKey: ["hospitals"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("hospitals").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  function locate() {
+    if (!("geolocation" in navigator)) {
+      setLocStatus("denied");
+      setLoc(DEFAULT);
+      return;
+    }
+    setLocStatus("asking");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setLocStatus("granted");
+      },
+      () => {
+        setLoc(DEFAULT);
+        setLocStatus("denied");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  const origin = loc ?? DEFAULT;
+  const list = useMemo(
+    () =>
+      hospitals
+        .map((h) => ({
+          ...h,
+          distance: haversineKm(origin, { lat: h.latitude, lon: h.longitude }),
+        }))
+        .filter((h) => filters.every((f) => h[f]))
+        .sort((a, b) => a.distance - b.distance),
+    [hospitals, origin, filters],
+  );
+  const current = list.find((h) => h.id === selected) ?? null;
+
+  const directionsUrl = (h: { latitude: number; longitude: number }) =>
+    `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${origin.lat}%2C${origin.lon}%3B${h.latitude}%2C${h.longitude}`;
+
+  return (
+    <>
+      <PageHeading
+        title="Find nearby hospitals"
+        description="Hospitals sorted by straight-line distance from your location."
+        action={
+          <Button onClick={locate} disabled={locStatus === "asking"}>
+            {locStatus === "asking" ? "Locating…" : loc ? "Update my location" : "Use my location"}
+          </Button>
+        }
+      />
+      {locStatus === "denied" ? (
+        <p className="mb-4 rounded-md bg-warning-soft p-3 text-sm text-warning-foreground">
+          Location unavailable — showing distances from the demo city centre instead.
+        </p>
+      ) : null}
+      {locStatus === "idle" ? (
+        <p className="mb-4 rounded-md bg-info-soft p-3 text-sm">
+          Tap “Use my location” to sort by distance from you. Until then, distances are from the demo
+          city centre.
+        </p>
+      ) : null}
+
+      <div className="mb-4 flex flex-wrap gap-4">
+        {FILTERS.map((f) => (
+          <label key={f.key} className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={filters.includes(f.key)}
+              onCheckedChange={(v) =>
+                setFilters(v ? [...filters, f.key] : filters.filter((x) => x !== f.key))
+              }
+            />
+            {f.label}
+          </label>
+        ))}
+      </div>
+
+      <ClientOnly fallback={<div className="h-[420px] animate-pulse rounded-lg bg-muted" />}>
+        <Suspense fallback={<div className="h-[420px] animate-pulse rounded-lg bg-muted" />}>
+          <HospitalMap center={origin} hospitals={list} onSelect={setSelected} />
+        </Suspense>
+      </ClientOnly>
+
+      <p className="mt-6 mb-3 text-sm text-muted-foreground">{list.length} hospitals found</p>
+      <div className="grid gap-4 md:grid-cols-2">
+        {list.map((h) => (
+          <div key={h.id} className="card-surface p-5">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="font-semibold">{h.name}</h3>
+              <span className="mono-id whitespace-nowrap text-sm font-semibold text-primary">
+                {h.distance.toFixed(1)} km
+              </span>
+            </div>
+            <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
+              <Capability label="Emergency" ok={h.emergency} />
+              <Capability label="Trauma" ok={h.trauma} />
+              <Capability label="Ambulance" ok={h.ambulance} />
+            </dl>
+            <div className="mt-4 flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setSelected(h.id)}>
+                View details
+              </Button>
+              <Button size="sm" asChild>
+                <a href={directionsUrl(h)} target="_blank" rel="noopener noreferrer">
+                  Get directions
+                </a>
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={!!current} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent>
+          {current ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{current.name}</DialogTitle>
+                <DialogDescription>{current.distance.toFixed(1)} km away</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>Address:</strong> {current.address}
+                </p>
+                <p>
+                  <strong>Phone:</strong>{" "}
+                  <a className="text-primary underline" href={`tel:${current.phone}`}>
+                    {current.phone}
+                  </a>
+                </p>
+                <p>
+                  <strong>Status:</strong> {current.open_24h ? "Open 24 hours" : "Limited hours"}
+                </p>
+                <div className="grid grid-cols-3 gap-2 pt-2 text-xs">
+                  <Capability label="Emergency" ok={current.emergency} />
+                  <Capability label="Trauma" ok={current.trauma} />
+                  <Capability label="Ambulance" ok={current.ambulance} />
+                </div>
+              </div>
+              <Button asChild className="mt-2">
+                <a href={directionsUrl(current)} target="_blank" rel="noopener noreferrer">
+                  Get directions
+                </a>
+              </Button>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function Capability({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div className={`rounded-md px-2 py-1.5 ${ok ? "bg-success-soft" : "bg-muted text-muted-foreground"}`}>
+      <dt className="font-medium">{label}</dt>
+      <dd>{ok ? "Available" : "Not available"}</dd>
+    </div>
+  );
+}
