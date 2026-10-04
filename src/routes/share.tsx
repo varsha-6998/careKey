@@ -140,7 +140,7 @@ function SharePage() {
   }
 
   async function setStatus(c: ConsentRow, status: "revoked" | "active" | "rejected") {
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: typeof status; revoked_at?: string; expires_at?: string } = { status };
     if (status === "revoked") patch.revoked_at = new Date().toISOString();
     if (status === "active" && !c.expires_at)
       patch.expires_at = new Date(Date.now() + 7 * 86400_000).toISOString();
