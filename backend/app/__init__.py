@@ -1,0 +1,1 @@
+"""CareKey FastAPI application package."""
