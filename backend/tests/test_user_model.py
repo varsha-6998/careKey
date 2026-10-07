@@ -1,0 +1,19 @@
+from app.models.enums import AppRole
+from app.models.user import User
+
+
+def test_user_table_columns():
+    columns = {column.name for column in User.__table__.columns}
+    assert columns == {"id", "firebase_uid", "email", "role", "created_at", "updated_at"}
+
+
+def test_firebase_uid_is_unique_and_indexed():
+    firebase_uid = User.__table__.c.firebase_uid
+    unique_indexes = [index for index in User.__table__.indexes if index.unique]
+    assert any("firebase_uid" in index.columns for index in unique_indexes)
+    assert firebase_uid.nullable is False
+
+
+def test_user_roles_are_limited():
+    assert {role.value for role in AppRole} == {"patient", "doctor", "admin"}
+    assert User.__table__.c.role.nullable is False

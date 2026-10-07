@@ -22,8 +22,17 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
     local_storage_dir: str = "./storage"
     osrm_base_url: str | None = None
-    firebase_project_id: str | None = None
-    firebase_credentials_path: str | None = None
+    firebase_project_id: str | None = Field(
+        default=None,
+        description="Firebase project ID (FIREBASE_PROJECT_ID).",
+    )
+    firebase_credentials_path: str | None = Field(
+        default=None,
+        description=(
+            "Path to a Firebase service-account JSON file "
+            "(FIREBASE_CREDENTIALS_PATH). Never put the JSON contents in env."
+        ),
+    )
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -35,6 +35,7 @@ dist-ssr
 backend/.venv/
 backend/venv/
 backend/.env
+backend/secrets/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/.pytest_cache/

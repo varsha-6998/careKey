@@ -5,6 +5,7 @@ from app.models.hospital import Hospital
 from app.models.patient import Patient
 from app.models.profile import Profile, UserRole
 from app.models.records import Allergy, Condition, Document, Medication, Surgery
+from app.models.user import User
 
 __all__ = [
     "AccessLog",
@@ -19,5 +20,6 @@ __all__ = [
     "Patient",
     "Profile",
     "Surgery",
+    "User",
     "UserRole",
 ]
