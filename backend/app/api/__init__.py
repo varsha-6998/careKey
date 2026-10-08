@@ -1,1 +1,1 @@
-"""HTTP routers. Phase 1 exposes only health checks."""
+"""HTTP routers: health, auth, and role-gated probes."""

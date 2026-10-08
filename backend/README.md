@@ -65,14 +65,12 @@ Differences from the old Supabase schema (intentional):
 
 ## What is not implemented yet
 
-- Firebase ID token verification
-- Role-protected endpoints
 - Patient / record / consent / emergency / hospital HTTP APIs
 - Face verification
 - Frontend integration
 - Hospital seed data and OSRM routing
 
-`app/core/security.py` is an explicit placeholder. Do not treat this API as secured.
+Role checks use `require_roles` and the `users.role` column. Probe routes: `GET /roles/patient`, `GET /roles/doctor`, `GET /roles/admin`.
 
 ## Environment variables
 

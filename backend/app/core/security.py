@@ -1,7 +1,10 @@
-"""Firebase ID-token authentication for FastAPI routes."""
+"""Firebase ID-token authentication and role checks for FastAPI routes."""
+
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -11,6 +14,7 @@ from app.core.firebase import (
     FirebaseTokenError,
     verify_id_token,
 )
+from app.models.enums import AppRole
 from app.models.user import User
 from app.services.users import get_or_create_user_from_identity
 
@@ -65,3 +69,30 @@ def get_current_user(
     Role is never taken from the request. New users are bootstrapped as patients.
     """
     return get_or_create_user_from_identity(db, identity)
+
+
+def require_roles(*allowed_roles: AppRole) -> Callable[..., User]:
+    """Allow the request only when the database user role is one of ``allowed_roles``.
+
+    Role is loaded from the ``users`` row, never from the request body, query, or headers.
+    """
+    if not allowed_roles:
+        raise ValueError("require_roles requires at least one role")
+
+    allowed = frozenset(allowed_roles)
+
+    def _require_roles(
+        user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> User:
+        stored = db.scalar(select(User).where(User.id == user.id))
+        if stored is None:
+            raise _http_error(status.HTTP_401_UNAUTHORIZED, _UNAUTHORIZED["invalid"])
+        if stored.role not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+        return stored
+
+    return _require_roles

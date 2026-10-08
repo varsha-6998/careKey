@@ -12,7 +12,7 @@ from app.models.enums import AppRole
 class User(Base):
     """Firebase-authenticated application user.
 
-    Token verification and RBAC are implemented in later phases.
+    ``role`` is stored in the database and is the only source for authorization.
     """
 
     __tablename__ = "users"
