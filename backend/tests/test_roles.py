@@ -39,11 +39,17 @@ class _FakeDb:
         return None
 
 
-def _user(role: AppRole, firebase_uid: str = "uid-1", email: str = "user@example.com") -> User:
+def _user(
+    role: AppRole,
+    firebase_uid: str = "uid-1",
+    email: str = "user@example.com",
+    is_active: bool = True,
+) -> User:
     return User(
         id=uuid4(),
         firebase_uid=firebase_uid,
         email=email,
+        is_active=is_active,
         role=role,
         created_at=_FIXED_NOW,
         updated_at=_FIXED_NOW,
@@ -112,6 +118,27 @@ def test_role_endpoint_requires_authentication(patient_client: TestClient):
     response = patient_client.get("/roles/patient")
     assert response.status_code == 401
     assert response.json()["detail"] == "Missing authorization token"
+
+
+def test_role_endpoint_rejects_inactive_user(monkeypatch: pytest.MonkeyPatch):
+    inactive_user = _user(AppRole.PATIENT, "inactive-user", "inactive@example.com", is_active=False)
+    identity = inactive_user
+    monkeypatch.setattr("app.core.security.verify_id_token", lambda _token: FirebaseIdentity(firebase_uid=identity.firebase_uid, email=identity.email))
+
+    db = _FakeDb(user=inactive_user)
+
+    def override_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        with TestClient(app) as test_client:
+            response = test_client.get("/roles/patient", headers={"Authorization": "Bearer token"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "User account is disabled"
 
 
 def test_role_query_and_header_are_ignored(patient_client: TestClient):

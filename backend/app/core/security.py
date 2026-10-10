@@ -68,7 +68,10 @@ def get_current_user(
 
     Role is never taken from the request. New users are bootstrapped as patients.
     """
-    return get_or_create_user_from_identity(db, identity)
+    user = get_or_create_user_from_identity(db, identity)
+    if not user.is_active:
+        raise _http_error(status.HTTP_401_UNAUTHORIZED, _UNAUTHORIZED["disabled"])
+    return user
 
 
 def require_roles(*allowed_roles: AppRole) -> Callable[..., User]:
@@ -88,6 +91,8 @@ def require_roles(*allowed_roles: AppRole) -> Callable[..., User]:
         stored = db.scalar(select(User).where(User.id == user.id))
         if stored is None:
             raise _http_error(status.HTTP_401_UNAUTHORIZED, _UNAUTHORIZED["invalid"])
+        if not stored.is_active:
+            raise _http_error(status.HTTP_401_UNAUTHORIZED, _UNAUTHORIZED["disabled"])
         if stored.role not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

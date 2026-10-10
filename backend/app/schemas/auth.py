@@ -12,6 +12,7 @@ class AuthMeResponse(BaseModel):
     id: UUID
     firebase_uid: str
     email: str | None
+    is_active: bool
     role: AppRole
     created_at: datetime
     updated_at: datetime

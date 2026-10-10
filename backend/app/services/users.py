@@ -21,6 +21,7 @@ def get_or_create_user_from_identity(db: Session, identity: FirebaseIdentity) ->
         user = User(
             firebase_uid=identity.firebase_uid,
             email=identity.email,
+            is_active=True,
             role=DEFAULT_BOOTSTRAP_ROLE,
         )
         db.add(user)

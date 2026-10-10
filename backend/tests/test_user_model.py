@@ -4,7 +4,7 @@ from app.models.user import User
 
 def test_user_table_columns():
     columns = {column.name for column in User.__table__.columns}
-    assert columns == {"id", "firebase_uid", "email", "role", "created_at", "updated_at"}
+    assert columns == {"id", "firebase_uid", "email", "is_active", "role", "created_at", "updated_at"}
 
 
 def test_firebase_uid_is_unique_and_indexed():
@@ -12,6 +12,11 @@ def test_firebase_uid_is_unique_and_indexed():
     unique_indexes = [index for index in User.__table__.indexes if index.unique]
     assert any("firebase_uid" in index.columns for index in unique_indexes)
     assert firebase_uid.nullable is False
+
+
+def test_user_is_active_defaults_to_true_and_is_required():
+    assert User.__table__.c.is_active.nullable is False
+    assert User.__table__.c.is_active.default is not None
 
 
 def test_user_roles_are_limited():

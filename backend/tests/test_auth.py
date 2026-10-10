@@ -84,6 +84,34 @@ def test_auth_me_expired_token(auth_client: TestClient, monkeypatch: pytest.Monk
     assert response.json()["detail"] == "Authorization token has expired"
 
 
+def test_auth_me_rejects_inactive_user(auth_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    identity = FirebaseIdentity(firebase_uid="inactive-uid", email="inactive@example.com")
+    monkeypatch.setattr("app.core.security.verify_id_token", lambda _token: identity)
+
+    user = User(
+        id=uuid4(),
+        firebase_uid="inactive-uid",
+        email="inactive@example.com",
+        is_active=False,
+        role=AppRole.PATIENT,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    def override_db():
+        yield _FakeDb(user=user)
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        with TestClient(app) as client:
+            response = client.get("/auth/me", headers={"Authorization": "Bearer inactive-token"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "User account is disabled"
+
+
 def test_auth_me_bootstraps_patient_and_ignores_client_role(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -113,6 +141,7 @@ def test_auth_me_bootstraps_patient_and_ignores_client_role(
     body = response.json()
     assert body["firebase_uid"] == "firebase-uid-1"
     assert body["email"] == "user@example.com"
+    assert body["is_active"] is True
     assert body["role"] == "patient"
     assert db.user is not None
     assert db.user.role == AppRole.PATIENT
@@ -125,6 +154,7 @@ def test_auth_me_returns_existing_user_role_from_database(
         id=uuid4(),
         firebase_uid="firebase-uid-2",
         email="doctor@example.com",
+        is_active=True,
         role=AppRole.DOCTOR,
         created_at=_FIXED_NOW,
         updated_at=_FIXED_NOW,
@@ -152,7 +182,9 @@ def test_auth_me_returns_existing_user_role_from_database(
         app.dependency_overrides.update(previous_overrides)
 
     assert response.status_code == 200
-    assert response.json()["role"] == "doctor"
+    body = response.json()
+    assert body["role"] == "doctor"
+    assert body["is_active"] is True
 
 
 def test_verify_id_token_uses_uid_and_email_not_role_claim(monkeypatch: pytest.MonkeyPatch):
@@ -193,5 +225,7 @@ def test_bootstrap_uses_verified_identity_not_client_fields():
     user = get_or_create_user_from_identity(db, identity)
     assert user.firebase_uid == "verified-uid"
     assert user.email == "verified@example.com"
+    assert user.is_active is True
     assert user.role == AppRole.PATIENT
+    assert created[0].is_active is True
     assert created[0].role == AppRole.PATIENT
