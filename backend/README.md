@@ -1,16 +1,16 @@
-# CareKey API — Phase 1 foundation
+# CareKey API — Phase 2 authentication and RBAC
 
-Research prototype backend. This phase provides configuration, PostgreSQL models, Alembic migrations, CORS, error handling, and a health check. It does **not** yet authenticate users, expose domain APIs, verify faces, or replace the frontend's current Supabase client.
-
-The existing TanStack Start UI is unchanged. Until a later phase wires the frontend to this API, the two stacks are independent.
+CareKey is a research prototype. Phase 2 adds Firebase ID-token authentication, database-backed application users and roles, `/auth/me`, and role-gated probe endpoints. It does not implement Phase 3+ domain APIs, face verification, or frontend integration.
 
 ## Requirements
 
 - Python 3.11+
-- PostgreSQL 14+
-- A virtual environment is recommended
+- PostgreSQL 14+ for running the API
+- A Firebase project with Firebase Authentication enabled
 
-## Setup
+## Local setup
+
+From the repository root, create and activate a virtual environment, install the backend dependencies, and create the local environment file:
 
 ```powershell
 cd backend
@@ -20,58 +20,48 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Edit `.env` and set `DATABASE_URL` to a real PostgreSQL database you control. Do not commit `.env`.
+Set `DATABASE_URL` in `.env` to a PostgreSQL database and configure these Firebase Admin SDK settings:
 
-Create the database if it does not exist:
-
-```sql
-CREATE DATABASE carekey;
+```dotenv
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_CREDENTIALS_PATH=./secrets/firebase-service-account.json
 ```
 
-Run migrations:
+In Firebase Console, create a service-account key for the project and save the JSON file at the configured path (or update the path to its location). Keep the private key file and `.env` out of Git. The API verifies Firebase ID tokens using this service account; roles come from the application's `users.role` column, never from client claims.
+
+Create the database, apply migrations, and start the API:
 
 ```powershell
 alembic upgrade head
-```
-
-Start the API:
-
-```powershell
 uvicorn app.main:app --reload --port 8000
 ```
 
-- Liveness: `GET http://localhost:8000/health`
-- Readiness (requires PostgreSQL): `GET http://localhost:8000/health/ready`
+- `GET http://localhost:8000/health`
+- `GET http://localhost:8000/auth/me` (requires `Authorization: Bearer <Firebase ID token>`)
+- `GET http://localhost:8000/roles/patient`
+- `GET http://localhost:8000/roles/doctor`
+- `GET http://localhost:8000/roles/admin`
 - OpenAPI: `http://localhost:8000/docs`
 
-## Tests
+New verified users are created with the `patient` role. A trusted administrator must assign elevated `doctor` or `admin` roles in the database; a requested role from the client is ignored.
+
+## Focused Phase 2 tests
+
+From the `backend` directory, run:
 
 ```powershell
-pytest
+pytest tests/test_auth.py tests/test_roles.py tests/test_user_model.py
 ```
 
-Health tests do not require PostgreSQL. `/health/ready` is not asserted in the default suite because it needs a live database.
+These authentication and RBAC tests mock Firebase token verification and use an in-memory fake database, so they do not need Firebase credentials, a Firebase project connection, or a running PostgreSQL server. `test_auth.py` covers missing and invalid tokens, verified identity, `/auth/me`, and patient bootstrap; `test_roles.py` covers patient, doctor, admin access and forbidden role access.
 
-## Schema (aligned with the current frontend)
+## Phase 2 functionality
 
-Tables use the same names and fields as the existing app: `profiles`, `user_roles`, `patients`, `allergies`, `conditions`, `medications`, `surgeries`, `documents`, `consents`, `access_logs`, `hospitals`.
-
-Differences from the old Supabase schema (intentional):
-
-- `profiles.id` is an application UUID, not `auth.users`.
-- `profiles.firebase_uid` is nullable and unused until Firebase Auth is implemented.
-- There is no Row Level Security here; authorization will live in FastAPI in later phases.
-- Document files will use `LOCAL_STORAGE_DIR`, not Supabase Storage.
-
-## What is not implemented yet
-
-- Patient / record / consent / emergency / hospital HTTP APIs
-- Face verification
-- Frontend integration
-- Hospital seed data and OSRM routing
-
-Role checks use `require_roles` and the `users.role` column. Probe routes: `GET /roles/patient`, `GET /roles/doctor`, `GET /roles/admin`.
+- Firebase Admin verifies bearer ID tokens and handles invalid, expired, revoked, disabled, and unavailable-token cases.
+- `/auth/me` returns the authenticated application user, creating a patient-role user on first verified login.
+- Role-gated endpoints authorize from the stored application role and reject unauthorized access.
+- Focused tests exercise authentication and role enforcement without external credentials or services.
 
 ## Environment variables
 
-See [`.env.example`](.env.example). Firebase and OSRM values are documented for later phases and are unused in Phase 1.
+See [`.env.example`](.env.example) for the remaining application settings. `DATABASE_URL` is needed for the running API; `FIREBASE_PROJECT_ID` and `FIREBASE_CREDENTIALS_PATH` are needed for real Firebase-authenticated API requests. OSRM and local file storage are outside the Phase 2 authentication scope.
