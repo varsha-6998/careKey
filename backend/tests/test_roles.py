@@ -12,6 +12,8 @@ from app.main import app
 from app.models.enums import AppRole
 from app.models.user import User
 
+_FIXED_NOW = datetime(2025, 1, 1, tzinfo=timezone.utc)
+
 
 class _FakeDb:
     def __init__(self, user: User | None = None) -> None:
@@ -21,11 +23,10 @@ class _FakeDb:
         return self.user
 
     def add(self, obj: User) -> None:
-        now = datetime.now(timezone.utc)
         if obj.id is None:
             obj.id = uuid4()
-        obj.created_at = now
-        obj.updated_at = now
+        obj.created_at = _FIXED_NOW
+        obj.updated_at = _FIXED_NOW
         self.user = obj
 
     def commit(self) -> None:
@@ -39,14 +40,13 @@ class _FakeDb:
 
 
 def _user(role: AppRole, firebase_uid: str = "uid-1", email: str = "user@example.com") -> User:
-    now = datetime.now(timezone.utc)
     return User(
         id=uuid4(),
         firebase_uid=firebase_uid,
         email=email,
         role=role,
-        created_at=now,
-        updated_at=now,
+        created_at=_FIXED_NOW,
+        updated_at=_FIXED_NOW,
     )
 
 
@@ -58,10 +58,15 @@ def _client_for(user: User, monkeypatch: pytest.MonkeyPatch) -> Generator[TestCl
     def override_db():
         yield db
 
-    app.dependency_overrides[get_db] = override_db
-    with TestClient(app) as test_client:
-        yield test_client
+    previous_overrides = app.dependency_overrides.copy()
     app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = override_db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(previous_overrides)
 
 
 @pytest.fixture
