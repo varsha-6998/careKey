@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
+from app.api.patients import router as patients_router
 from app.api.roles import router as roles_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
@@ -31,3 +32,4 @@ register_exception_handlers(app)
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(roles_router)
+app.include_router(patients_router)

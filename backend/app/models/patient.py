@@ -48,3 +48,19 @@ class Patient(Base):
     surgeries: Mapped[list["Surgery"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     documents: Mapped[list["Document"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     consents: Mapped[list["Consent"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
+
+    @property
+    def firebase_uid(self) -> str | None:
+        return self.profile.firebase_uid if self.profile is not None else None
+
+    @property
+    def full_name(self) -> str | None:
+        return self.profile.full_name if self.profile is not None else None
+
+    @property
+    def email(self) -> str | None:
+        return self.profile.email if self.profile is not None else None
+
+    @property
+    def created_at(self) -> datetime | None:
+        return self.profile.created_at if self.profile is not None else None

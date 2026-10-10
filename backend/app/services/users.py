@@ -1,5 +1,7 @@
 """Application user lookup and Firebase identity bootstrap."""
 
+from uuid import uuid4
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -19,6 +21,7 @@ def get_or_create_user_from_identity(db: Session, identity: FirebaseIdentity) ->
     user = db.scalar(select(User).where(User.firebase_uid == identity.firebase_uid))
     if user is None:
         user = User(
+            id=uuid4(),
             firebase_uid=identity.firebase_uid,
             email=identity.email,
             is_active=True,
