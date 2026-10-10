@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from collections.abc import Generator
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -13,6 +12,8 @@ from app.models.enums import AppRole
 from app.models.user import User
 from app.services.users import get_or_create_user_from_identity
 
+_FIXED_NOW = datetime(2025, 1, 1, tzinfo=timezone.utc)
+
 
 class _FakeDb:
     def __init__(self, user: User | None = None) -> None:
@@ -22,11 +23,10 @@ class _FakeDb:
         return self.user
 
     def add(self, obj: User) -> None:
-        now = datetime.now(timezone.utc)
         if obj.id is None:
             obj.id = uuid4()
-        obj.created_at = now
-        obj.updated_at = now
+        obj.created_at = _FIXED_NOW
+        obj.updated_at = _FIXED_NOW
         self.user = obj
 
     def commit(self) -> None:
@@ -46,10 +46,15 @@ def auth_client() -> Generator[TestClient, None, None]:
     def override_db():
         yield db
 
-    app.dependency_overrides[get_db] = override_db
-    with TestClient(app) as test_client:
-        yield test_client
+    previous_overrides = app.dependency_overrides.copy()
     app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = override_db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(previous_overrides)
 
 
 def test_auth_me_missing_token(auth_client: TestClient):
@@ -89,6 +94,8 @@ def test_auth_me_bootstraps_patient_and_ignores_client_role(
     def override_db():
         yield db
 
+    previous_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_db
     try:
         with TestClient(app) as client:
@@ -99,6 +106,7 @@ def test_auth_me_bootstraps_patient_and_ignores_client_role(
             )
     finally:
         app.dependency_overrides.clear()
+        app.dependency_overrides.update(previous_overrides)
 
     assert response.status_code == 200
     body = response.json()
@@ -112,14 +120,13 @@ def test_auth_me_bootstraps_patient_and_ignores_client_role(
 def test_auth_me_returns_existing_user_role_from_database(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    now = datetime.now(timezone.utc)
     existing = User(
         id=uuid4(),
         firebase_uid="firebase-uid-2",
         email="doctor@example.com",
         role=AppRole.DOCTOR,
-        created_at=now,
-        updated_at=now,
+        created_at=_FIXED_NOW,
+        updated_at=_FIXED_NOW,
     )
     identity = FirebaseIdentity(firebase_uid="firebase-uid-2", email="doctor@example.com")
     monkeypatch.setattr("app.core.security.verify_id_token", lambda _token: identity)
@@ -129,6 +136,8 @@ def test_auth_me_returns_existing_user_role_from_database(
     def override_db():
         yield db
 
+    previous_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_db
     try:
         with TestClient(app) as client:
@@ -139,6 +148,7 @@ def test_auth_me_returns_existing_user_role_from_database(
             )
     finally:
         app.dependency_overrides.clear()
+        app.dependency_overrides.update(previous_overrides)
 
     assert response.status_code == 200
     assert response.json()["role"] == "doctor"
@@ -170,11 +180,10 @@ def test_bootstrap_uses_verified_identity_not_client_fields():
     created: list[User] = []
 
     def _add(user: User) -> None:
-        now = datetime.now(timezone.utc)
         if user.id is None:
             user.id = uuid4()
-        user.created_at = now
-        user.updated_at = now
+        user.created_at = _FIXED_NOW
+        user.updated_at = _FIXED_NOW
         created.append(user)
         db.scalar.return_value = user
 
